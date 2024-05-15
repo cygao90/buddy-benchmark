@@ -2,6 +2,39 @@
 # MLIR SCF Dialect GccLoopsEx1 Operation + Upstream Lowering Passes
 #-------------------------------------------------------------------------------
 
+function(build_MLIRGccLoopsEx1Vec step)
+  add_custom_command(OUTPUT mlir-gccloopsex1vec-${step}.o
+    COMMAND cat ${BUDDY_SOURCE_DIR}/benchmarks/Vectorization/gccloops/MLIRGccLoopsEx1Vec.mlir |
+            sed 's/STEP_PLACEHOLDER/${step}/g' |
+            ${LLVM_MLIR_BINARY_DIR}/mlir-opt
+              -convert-linalg-to-loops
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-vector-to-llvm
+              -finalize-memref-to-llvm
+              -convert-arith-to-llvm
+              -llvm-request-c-wrappers
+              -convert-func-to-llvm
+              -reconcile-unrealized-casts |
+            ${LLVM_MLIR_BINARY_DIR}/mlir-translate --mlir-to-llvmir |
+            ${LLVM_MLIR_BINARY_DIR}/llc -O3 -mtriple=${BUDDY_OPT_TRIPLE} 
+              --filetype=obj 
+              -o ${BUDDY_BINARY_DIR}/../benchmarks/Vectorization/gccloops/mlir-gccloopsex1vec-${step}.o
+  )
+  add_library(MLIRGccLoopsEx1Vec${step} STATIC mlir-gccloopsex1vec-${step}.o)
+  set_target_properties(MLIRGccLoopsEx1Vec${step} PROPERTIES LINKER_LANGUAGE CXX)
+endfunction()
+
+build_MLIRGccLoopsEx1Vec(16)
+build_MLIRGccLoopsEx1Vec(32)
+build_MLIRGccLoopsEx1Vec(64)
+build_MLIRGccLoopsEx1Vec(128)
+build_MLIRGccLoopsEx1Vec(256)
+
+#-------------------------------------------------------------------------------
+# MLIR SCF Dialect GccLoopsEx1 Operation + Upstream Lowering Passes
+#-------------------------------------------------------------------------------
+
 add_custom_command(OUTPUT mlir-gccloopsex1.o
   COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt
           ${BUDDY_SOURCE_DIR}/benchmarks/Vectorization/gccloops/MLIRGccLoopsEx1.mlir 
@@ -446,6 +479,7 @@ set_target_properties(MLIRGccLoopsEx25 PROPERTIES LINKER_LANGUAGE CXX)
 
 add_executable(vectorization-gccloops-benchmark
   Main.cpp
+  MLIRGccLoopsEx1VecBenchmark.cpp
   MLIRGccLoopsEx1Benchmark.cpp
   MLIRGccLoopsEx2aBenchmark.cpp
   MLIRGccLoopsEx2bBenchmark.cpp
@@ -470,6 +504,11 @@ add_executable(vectorization-gccloops-benchmark
 
 target_link_libraries(vectorization-gccloops-benchmark
   GoogleBenchmark
+  MLIRGccLoopsEx1Vec16
+  MLIRGccLoopsEx1Vec32
+  MLIRGccLoopsEx1Vec64
+  MLIRGccLoopsEx1Vec128
+  MLIRGccLoopsEx1Vec256
   MLIRGccLoopsEx1
   MLIRGccLoopsEx2a
   MLIRGccLoopsEx2b

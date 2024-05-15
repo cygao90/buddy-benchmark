@@ -20,6 +20,7 @@
 
 #include <benchmark/benchmark.h>
 
+void generateResultMLIRGccLoopsEx1Vec();
 void generateResultMLIRGccLoopsEx1();
 void generateResultMLIRGccLoopsEx2a();
 void generateResultMLIRGccLoopsEx2b();
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
   ::benchmark::RunSpecifiedBenchmarks();
 
   // Generate result.
+  generateResultMLIRGccLoopsEx1Vec();
   generateResultMLIRGccLoopsEx1();
   generateResultMLIRGccLoopsEx2a();
   generateResultMLIRGccLoopsEx2b();
